@@ -1,0 +1,23 @@
+name: mirror-sync
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch snapshots from abejar.net
+        run: |
+          curl -fsS --max-time 30 https://abejar.net/llms.txt -o llms.txt
+          curl -fsS --max-time 30 "https://abejar.net/api/entries?limit=100" -o entries.json
+          curl -fsS --max-time 30 https://abejar.net/api/questions -o questions.json
+      - name: Commit if changed
+        run: |
+          git config user.name "vinzabe"
+          git config user.email "gabejar@usa.com"
+          git add -A
+          git diff --cached --quiet || { git commit -m "mirror sync"; git push; }
